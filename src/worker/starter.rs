@@ -150,7 +150,7 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
         );
 
         match price {
-            Ok(price) => {println!("{:?}", price);
+            Ok(price) => {
                 let result = database.save_price(
                     shop_name,
                     &product.category,
