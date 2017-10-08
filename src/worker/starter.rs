@@ -154,6 +154,7 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
                 let result = database.save_price(
                     shop_name,
                     &product.category,
+                    &product.url,
                     &price.name,
                     timestamp,
                     price.price,

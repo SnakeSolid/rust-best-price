@@ -140,14 +140,21 @@ impl Database {
         &self,
         shop: &String,
         category: &String,
-        product: &String,
+        product_url: &String,
+        product_name: &String,
         timestamp: i64,
         price: f64,
     ) -> Result<(), DatabaseError> {
         let mut connection = self.connection.lock()?;
         let shop_id = Database::shop_id(&mut connection, shop)?;
         let category_id = Database::category_id(&mut connection, category)?;
-        let product_id = Database::product_id(&mut connection, shop_id, category_id, product)?;
+        let product_id = Database::product_id(
+            &mut connection,
+            shop_id,
+            category_id,
+            product_url,
+            product_name,
+        )?;
 
         Database::save_product_price(&mut connection, product_id, timestamp, price)?;
 
@@ -206,14 +213,15 @@ impl Database {
         connection: &mut Connection,
         shop_id: i64,
         category_id: i64,
+        url: &String,
         name: &String,
     ) -> Result<i64, DatabaseError> {
         let result;
 
-        if let Some(id) = Database::get_product_id(connection, name)? {
+        if let Some(id) = Database::get_product_id(connection, url)? {
             result = id
         } else {
-            Database::save_product(connection, shop_id, category_id, name)?;
+            Database::save_product(connection, shop_id, category_id, url, name)?;
             result = Database::last_inserted_id(connection)?;
         }
 
@@ -222,10 +230,10 @@ impl Database {
 
     fn get_product_id(
         connection: &mut Connection,
-        name: &String,
+        url: &String,
     ) -> Result<Option<i64>, DatabaseError> {
-        let mut statement = connection.prepare("SELECT id FROM product WHERE name = ?")?;
-        statement.bind(1, name.as_str())?;
+        let mut statement = connection.prepare("SELECT id FROM product WHERE url = ?")?;
+        statement.bind(1, url.as_str())?;
 
         if let State::Row = statement.next()? {
             let id = statement.read(0)?;
@@ -240,16 +248,18 @@ impl Database {
         connection: &mut Connection,
         shop_id: i64,
         category_id: i64,
+        url: &String,
         name: &String,
     ) -> Result<(), DatabaseError> {
         let statement = connection.prepare(
-            "INSERT INTO product ( shop_id, category_id, name ) VALUES ( ?, ?, ? )",
+            "INSERT INTO product ( shop_id, category_id, url, name ) VALUES ( ?, ?, ?, ? )",
         )?;
         let mut cursor = statement.cursor();
         cursor.bind(
             &[
                 Value::Integer(shop_id),
                 Value::Integer(category_id),
+                Value::String(url.clone()),
                 Value::String(name.clone()),
             ],
         )?;
