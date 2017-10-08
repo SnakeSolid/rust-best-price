@@ -18,6 +18,7 @@ use time;
 use toml::de::Error as TomlError;
 use toml;
 
+use database::Database;
 use logger::UnwrapLog;
 
 use super::Config;
@@ -126,7 +127,7 @@ where
 }
 
 
-fn load_all_products(config: &Config, loader: &mut PriceLoader) -> () {
+fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader) -> () {
     info!("Procisseng productrs.");
 
     let mut shops = HashMap::new();
@@ -136,10 +137,10 @@ fn load_all_products(config: &Config, loader: &mut PriceLoader) -> () {
     }
 
     for product in &config.products {
+        let timestamp = time::get_time().sec;
         let shop_name = &product.shop_name;
         let shop = shops.get(shop_name).expect("Shop from product not found");
-
-        let product = loader.load(
+        let price = loader.load(
             &product.url,
             &shop.cookies,
             &shop.name_selector,
@@ -148,12 +149,27 @@ fn load_all_products(config: &Config, loader: &mut PriceLoader) -> () {
             shop.price_index.unwrap_or(0),
         );
 
-        println!("product => {:?}", product);
+        match price {
+            Ok(price) => {println!("{:?}", price);
+                let result = database.save_price(
+                    shop_name,
+                    &product.category,
+                    &price.name,
+                    timestamp,
+                    price.price,
+                );
+
+                if let Err(error) = result {
+                    warn!("Can not save product price: {}", error);
+                }
+            }
+            Err(error) => warn!("Product parsing error: {}", error),
+        }
     }
 }
 
 
-fn run(config_path: PathBuf, period: time::Duration) {
+fn run(database: Database, config_path: PathBuf, period: time::Duration) {
     info!("Creating price loader.");
 
     let mut price_loader = PriceLoader::new().unwrap_log("Price loader creation error");
@@ -166,7 +182,7 @@ fn run(config_path: PathBuf, period: time::Duration) {
         let start_time = time::now();
 
         match read_config(&config_path) {
-            Ok(config) => load_all_products(&config, &mut price_loader),
+            Ok(config) => store_products(&database, &config, &mut price_loader),
             Err(error) => warn!("Error reading configuration: {}", error),
         }
 
@@ -188,7 +204,7 @@ fn run(config_path: PathBuf, period: time::Duration) {
 }
 
 
-pub fn start_crawler<P>(path: P, period: usize) -> IoResult<JoinHandle<()>>
+pub fn start_crawler<P>(database: Database, path: P, period: usize) -> IoResult<JoinHandle<()>>
 where
     P: AsRef<Path>,
 {
@@ -200,5 +216,5 @@ where
     Builder::new()
         .name("crawler".into())
         .stack_size(512 * 1024)
-        .spawn(move || run(config_path, period))
+        .spawn(move || run(database, config_path, period))
 }
