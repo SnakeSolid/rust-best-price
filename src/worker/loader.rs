@@ -18,6 +18,7 @@ use hyper::Result as HyperResult;
 use hyper::Uri;
 use hyper_tls::HttpsConnector;
 use kuchiki::parse_html;
+use kuchiki::NodeRef;
 use native_tls::Error as TlsError;
 use tendril::TendrilSink;
 use tokio_core::reactor::Core;
@@ -142,7 +143,6 @@ impl PriceLoader {
             UriSchema::Http => self.http_client.request(request),
             UriSchema::Https => self.https_client.request(request),
         };
-
         let future_content = request.and_then(|res| {
             res.body().fold(
                 Vec::new(),
@@ -155,48 +155,10 @@ impl PriceLoader {
         });
         let content = self.core.run(future_content)?;
         let document = parse_html().from_utf8().one(content.as_slice());
-        let mut product_name: Option<String> = None;
-        let mut product_price: Option<String> = None;
-
-        for css_match in document.select(name_selector).map_err(
-            ProductError::name_not_exists,
-        )?
-        {
-            let children = css_match.as_node().children();
-
-            for child in children {
-                if let Some(text) = child.as_text() {
-                    let text: String = text.borrow().trim().into();
-
-                    if !text.is_empty() {
-                        product_name = Some(text);
-
-                        break;
-                    }
-                }
-            }
-        }
-
-        for css_match in document
-            .select(price_selector)
-            .map_err(ProductError::price_not_exists)?
-            .enumerate()
-            .filter(|&(index, _)| index == price_index)
-            .map(|(_, value)| value)
-        {
-            let children = css_match.as_node().children();
-
-            for child in children {
-                if let Some(text) = child.as_text() {
-                    let text = text.borrow().chars().filter(|c| c.is_digit(10)).collect();
-
-                    product_price = Some(text);
-                }
-            }
-        }
-
-        let product_name = product_name.ok_or_else(ProductError::name_not_found)?;
-        let product_price: u64 = product_price
+        let product_name = query_name(&document, name_selector)?.ok_or_else(
+            ProductError::name_not_found,
+        )?;
+        let product_price: u64 = query_price(&document, price_selector, price_index)?
             .ok_or_else(ProductError::price_not_found)?
             .parse()?;
 
@@ -205,4 +167,53 @@ impl PriceLoader {
             price_factor * product_price as f64,
         ))
     }
+}
+
+fn query_name(document: &NodeRef, selector: &str) -> Result<Option<String>, ProductError> {
+    for css_match in document.select(selector).map_err(
+        ProductError::name_not_exists,
+    )?
+    {
+        let children = css_match.as_node().children();
+
+        for child in children {
+            if let Some(text) = child.as_text() {
+                let text: String = text.borrow().trim().into();
+
+                if !text.is_empty() {
+                    return Ok(Some(text));
+                }
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+fn query_price(
+    document: &NodeRef,
+    selector: &str,
+    index: usize,
+) -> Result<Option<String>, ProductError> {
+    for css_match in document
+        .select(selector)
+        .map_err(ProductError::price_not_exists)?
+        .enumerate()
+        .filter(|&(i, _)| i == index)
+        .map(|(_, value)| value)
+    {
+        let children = css_match.as_node().children();
+
+        for child in children {
+            if let Some(text) = child.as_text() {
+                let text: String = text.borrow().chars().filter(|c| c.is_digit(10)).collect();
+
+                if !text.is_empty() {
+                    return Ok(Some(text));
+                }
+            }
+        }
+    }
+
+    Ok(None)
 }
