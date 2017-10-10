@@ -142,13 +142,14 @@ impl Database {
         category: &String,
         product_url: &String,
         product_name: &String,
+        iteration: i64,
         timestamp: i64,
         price: f64,
     ) -> Result<(), DatabaseError> {
         let mut connection = self.connection.lock()?;
-        let shop_id = Database::shop_id(&mut connection, shop)?;
-        let category_id = Database::category_id(&mut connection, category)?;
-        let product_id = Database::product_id(
+        let shop_id = shop_id(&mut connection, shop)?;
+        let category_id = category_id(&mut connection, category)?;
+        let product_id = product_id(
             &mut connection,
             shop_id,
             category_id,
@@ -156,177 +157,173 @@ impl Database {
             product_name,
         )?;
 
-        Database::save_product_price(&mut connection, product_id, timestamp, price)?;
+        save_product_price(&mut connection, product_id, iteration, timestamp, price)?;
 
         Ok(())
     }
+}
 
-    fn save_product_price(
-        connection: &mut Connection,
-        product_id: i64,
-        timestamp: i64,
-        price: f64,
-    ) -> Result<(), DatabaseError> {
-        let statement = connection.prepare(
-            "INSERT INTO product_price ( product_id, timestamp, price ) VALUES ( ?, ?, ? )",
-        )?;
-        let mut cursor = statement.cursor();
-        cursor.bind(
-            &[
-                Value::Integer(product_id),
-                Value::Integer(timestamp),
-                Value::Float(price),
-            ],
-        )?;
-        cursor.next()?;
+fn save_product_price(
+    connection: &mut Connection,
+    product_id: i64,
+    iteration: i64,
+    timestamp: i64,
+    price: f64,
+) -> Result<(), DatabaseError> {
+    let statement = connection.prepare(
+        "INSERT INTO product_price ( product_id, iteration, timestamp, price ) VALUES ( ?, ?, ?, ? )",
+    )?;
+    let mut cursor = statement.cursor();
+    cursor.bind(
+        &[
+            Value::Integer(product_id),
+            Value::Integer(iteration),
+            Value::Integer(timestamp),
+            Value::Float(price),
+        ],
+    )?;
+    cursor.next()?;
 
-        Ok(())
+    Ok(())
+}
+
+fn category_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
+    let result;
+
+    if let Some(id) = get_category_id(connection, name)? {
+        result = id
+    } else {
+        save_category(connection, name)?;
+        result = last_inserted_id(connection)?;
     }
 
-    fn category_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
-        let result;
+    Ok(result)
+}
 
-        if let Some(id) = Database::get_category_id(connection, name)? {
-            result = id
-        } else {
-            Database::save_category(connection, name)?;
-            result = Database::last_inserted_id(connection)?;
-        }
+fn shop_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
+    let result;
 
-        Ok(result)
+    if let Some(id) = get_shop_id(connection, name)? {
+        result = id
+    } else {
+        save_shop(connection, name)?;
+        result = last_inserted_id(connection)?;
     }
 
-    fn shop_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
-        let result;
+    Ok(result)
+}
 
-        if let Some(id) = Database::get_shop_id(connection, name)? {
-            result = id
-        } else {
-            Database::save_shop(connection, name)?;
-            result = Database::last_inserted_id(connection)?;
-        }
+pub fn product_id(
+    connection: &mut Connection,
+    shop_id: i64,
+    category_id: i64,
+    url: &String,
+    name: &String,
+) -> Result<i64, DatabaseError> {
+    let result;
 
-        Ok(result)
+    if let Some(id) = get_product_id(connection, url)? {
+        result = id
+    } else {
+        save_product(connection, shop_id, category_id, url, name)?;
+        result = last_inserted_id(connection)?;
     }
 
-    pub fn product_id(
-        connection: &mut Connection,
-        shop_id: i64,
-        category_id: i64,
-        url: &String,
-        name: &String,
-    ) -> Result<i64, DatabaseError> {
-        let result;
+    Ok(result)
+}
 
-        if let Some(id) = Database::get_product_id(connection, url)? {
-            result = id
-        } else {
-            Database::save_product(connection, shop_id, category_id, url, name)?;
-            result = Database::last_inserted_id(connection)?;
-        }
+fn get_product_id(connection: &mut Connection, url: &String) -> Result<Option<i64>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id FROM product WHERE url = ?")?;
+    statement.bind(1, url.as_str())?;
 
-        Ok(result)
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+
+        Ok(Some(id))
+    } else {
+        Ok(None)
     }
+}
 
-    fn get_product_id(
-        connection: &mut Connection,
-        url: &String,
-    ) -> Result<Option<i64>, DatabaseError> {
-        let mut statement = connection.prepare("SELECT id FROM product WHERE url = ?")?;
-        statement.bind(1, url.as_str())?;
+fn save_product(
+    connection: &mut Connection,
+    shop_id: i64,
+    category_id: i64,
+    url: &String,
+    name: &String,
+) -> Result<(), DatabaseError> {
+    let statement = connection.prepare(
+        "INSERT INTO product ( shop_id, category_id, url, name ) VALUES ( ?, ?, ?, ? )",
+    )?;
+    let mut cursor = statement.cursor();
+    cursor.bind(
+        &[
+            Value::Integer(shop_id),
+            Value::Integer(category_id),
+            Value::String(url.clone()),
+            Value::String(name.clone()),
+        ],
+    )?;
+    cursor.next()?;
 
-        if let State::Row = statement.next()? {
-            let id = statement.read(0)?;
+    Ok(())
+}
 
-            Ok(Some(id))
-        } else {
-            Ok(None)
-        }
+fn get_shop_id(connection: &mut Connection, name: &String) -> Result<Option<i64>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id FROM shop WHERE name = ?")?;
+    statement.bind(1, name.as_str())?;
+
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+
+        Ok(Some(id))
+    } else {
+        Ok(None)
     }
+}
 
-    fn save_product(
-        connection: &mut Connection,
-        shop_id: i64,
-        category_id: i64,
-        url: &String,
-        name: &String,
-    ) -> Result<(), DatabaseError> {
-        let statement = connection.prepare(
-            "INSERT INTO product ( shop_id, category_id, url, name ) VALUES ( ?, ?, ?, ? )",
-        )?;
-        let mut cursor = statement.cursor();
-        cursor.bind(
-            &[
-                Value::Integer(shop_id),
-                Value::Integer(category_id),
-                Value::String(url.clone()),
-                Value::String(name.clone()),
-            ],
-        )?;
-        cursor.next()?;
+fn save_shop(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
+    let statement = connection.prepare("INSERT INTO shop ( name ) VALUES ( ? )")?;
+    let mut cursor = statement.cursor();
+    cursor.bind(&[Value::String(name.clone())])?;
+    cursor.next()?;
 
-        Ok(())
+    Ok(())
+}
+
+fn get_category_id(
+    connection: &mut Connection,
+    name: &String,
+) -> Result<Option<i64>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id FROM category WHERE name = ?")?;
+    statement.bind(1, name.as_str())?;
+
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+
+        Ok(Some(id))
+    } else {
+        Ok(None)
     }
+}
 
-    fn get_shop_id(
-        connection: &mut Connection,
-        name: &String,
-    ) -> Result<Option<i64>, DatabaseError> {
-        let mut statement = connection.prepare("SELECT id FROM shop WHERE name = ?")?;
-        statement.bind(1, name.as_str())?;
+fn save_category(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
+    let statement = connection.prepare(
+        "INSERT INTO category ( name ) VALUES ( ? )",
+    )?;
+    let mut cursor = statement.cursor();
+    cursor.bind(&[Value::String(name.clone())])?;
+    cursor.next()?;
 
-        if let State::Row = statement.next()? {
-            let id = statement.read(0)?;
+    Ok(())
+}
 
-            Ok(Some(id))
-        } else {
-            Ok(None)
-        }
-    }
+fn last_inserted_id(connection: &mut Connection) -> Result<i64, DatabaseError> {
+    let mut query_id = connection.prepare("SELECT last_insert_rowid()")?;
 
-    fn save_shop(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
-        let statement = connection.prepare("INSERT INTO shop ( name ) VALUES ( ? )")?;
-        let mut cursor = statement.cursor();
-        cursor.bind(&[Value::String(name.clone())])?;
-        cursor.next()?;
-
-        Ok(())
-    }
-
-    fn get_category_id(
-        connection: &mut Connection,
-        name: &String,
-    ) -> Result<Option<i64>, DatabaseError> {
-        let mut statement = connection.prepare("SELECT id FROM category WHERE name = ?")?;
-        statement.bind(1, name.as_str())?;
-
-        if let State::Row = statement.next()? {
-            let id = statement.read(0)?;
-
-            Ok(Some(id))
-        } else {
-            Ok(None)
-        }
-    }
-
-    fn save_category(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
-        let statement = connection.prepare(
-            "INSERT INTO category ( name ) VALUES ( ? )",
-        )?;
-        let mut cursor = statement.cursor();
-        cursor.bind(&[Value::String(name.clone())])?;
-        cursor.next()?;
-
-        Ok(())
-    }
-
-    fn last_inserted_id(connection: &mut Connection) -> Result<i64, DatabaseError> {
-        let mut query_id = connection.prepare("SELECT last_insert_rowid()")?;
-
-        if let State::Row = query_id.next()? {
-            Ok(query_id.read(0)?)
-        } else {
-            Err(DatabaseError::no_data())
-        }
+    if let State::Row = query_id.next()? {
+        Ok(query_id.read(0)?)
+    } else {
+        Err(DatabaseError::no_data())
     }
 }

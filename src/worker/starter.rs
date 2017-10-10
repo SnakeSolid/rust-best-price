@@ -136,6 +136,8 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
         shops.insert(shop.name.clone(), shop.clone());
     }
 
+    let iteration = time::get_time().sec;
+
     for product in &config.products {
         let timestamp = time::get_time().sec;
         let shop_name = &product.shop_name;
@@ -156,6 +158,7 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
                     &product.category,
                     &product.url,
                     &price.name,
+                    iteration,
                     timestamp,
                     price.price,
                 );

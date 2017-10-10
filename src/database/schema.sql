@@ -16,15 +16,16 @@ CREATE TABLE product (
     id INTEGER PRIMARY KEY,
     shop_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
-    url TEXT,
-    name TEXT
+    url TEXT NOT NULL,
+    name TEXT NOT NULL
 );
 
 CREATE UNIQUE INDEX product_url ON product ( url ) ;
 
 CREATE TABLE product_price (
     id INTEGER PRIMARY KEY,
-    product_id INTEGER,
-    timestamp INTEGER,
-    price REAL
+    product_id INTEGER NOT NULL,
+    iteration INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    price REAL NOT NULL
 );
