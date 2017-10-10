@@ -51,7 +51,7 @@ fn main() {
     let bind_address = settings.bind_address();
     let bind_port = settings.bind_port();
 
-    info!("Strating WEB server on: {}:{}", bind_address, bind_port);
+    info!("Starting WEB server on {}:{}", bind_address, bind_port);
 
     Iron::new(|_: &mut Request| {
         Ok(Response::with((status::Ok, "Hello World!")))

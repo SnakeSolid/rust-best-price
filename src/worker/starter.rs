@@ -106,18 +106,18 @@ where
 {
     let path = path.as_ref();
 
-    info!("Reading file {}.", path.display());
+    info!("Reading file `{}`.", path.display());
 
     let mut file = File::open(path)?;
     let mut content = String::new();
 
     file.read_to_string(&mut content)?;
 
-    info!("Parsing config from file {}.", path.display());
+    info!("Parsing configuration from file `{}`.", path.display());
 
     let config: Config = toml::from_str(&content)?;
 
-    info!("Validating config from file {}.", path.display());
+    info!("Validating configuration from file `{}`.", path.display());
 
     if let Some(error) = config.validate() {
         Err(ReadConfigError::invalid_config(error))
@@ -128,7 +128,7 @@ where
 
 
 fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader) -> () {
-    info!("Procisseng productrs.");
+    info!("Processing products.");
 
     let mut shops = HashMap::new();
 
@@ -178,10 +178,10 @@ fn run(database: Database, config_path: PathBuf, period: time::Duration) {
 
     let mut price_loader = PriceLoader::new().unwrap_log("Price loader creation error");
 
-    info!("Strating price update loop.");
+    info!("Starting price update loop.");
 
     loop {
-        info!("Strating price update cycle.");
+        info!("Starting price update cycle.");
 
         let start_time = time::now();
 
