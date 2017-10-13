@@ -3,14 +3,14 @@ CREATE TABLE category (
     name TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX category_name ON category ( name ) ;
+CREATE UNIQUE INDEX nx_category_name ON category ( name ) ;
 
 CREATE TABLE shop (
     id INTEGER NOT NULL PRIMARY KEY,
     name TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX shop_name ON shop ( name ) ;
+CREATE UNIQUE INDEX nx_shop_name ON shop ( name ) ;
 
 CREATE TABLE product (
     id INTEGER PRIMARY KEY,
@@ -20,7 +20,7 @@ CREATE TABLE product (
     name TEXT NOT NULL
 );
 
-CREATE UNIQUE INDEX product_url ON product ( url ) ;
+CREATE UNIQUE INDEX nx_product_url ON product ( url ) ;
 
 CREATE TABLE product_price (
     id INTEGER PRIMARY KEY,
@@ -29,3 +29,5 @@ CREATE TABLE product_price (
     timestamp INTEGER NOT NULL,
     price REAL NOT NULL
 );
+
+CREATE INDEX nx_product_price_iteration ON product_price ( iteration ) ;
