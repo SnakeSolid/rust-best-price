@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Best Price</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.13/semantic.min.css" integrity="sha256-/Z28yXtfBv/6/alw+yZuODgTbKZm86IKbPE/5kjO/xY=" crossorigin="anonymous" />
+
+    <script async data-main="/static/js/init.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js" integrity="sha256-0SGl1PJNDyJwcV5T+weg2zpEMrh7xvlwO4oXgvZCeZk=" data-main="/static/js/init.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="ui container">
+    <div class="ui segment">
+      <div data-bind="visible: hasMessages, foreach: messages">
+        <div class="ui message" data-bind="css: { info: isInfo, warning: isWarning, error: isError }">
+          <div class="header" data-bind="visible: hasHeader, text: header"></div>
+          <p data-bind="text: message"></p>
+        </div>
+      </div>
+
+      <table class="ui celled striped table" data-bind="visible: isTableVisible">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Product</th>
+            <th>Shop</th>
+            <th>Price</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+
+        <tbody data-bind="foreach: products">
+          <tr>
+            <td class="collapsing">
+              <span data-bind="text: category"></span>
+            </td>
+
+            <td>
+              <span data-bind="text: product"></span>
+            </td>
+
+            <td>
+              <span data-bind="text: shop"></span>
+            </td>
+
+            <td>
+              <span data-bind="text: price"></span>
+            </td>
+
+            <td>
+              <span data-bind="text: updated"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

@@ -12,6 +12,7 @@ pub struct Settings {
     database_path: String,
     create_database: bool,
     force: bool,
+    disable_crawler: bool,
 }
 
 
@@ -19,13 +20,14 @@ impl Settings {
     pub fn from_args() -> Settings {
         info!("Parsing setting from command line arguments");
 
-        let mut bind_address: Option<String> = None;
-        let mut bind_port: Option<u16> = None;
-        let mut period: Option<usize> = None;
-        let mut config_path: Option<String> = None;
-        let mut database_path: Option<String> = None;
-        let mut create_database: bool = false;
-        let mut force: bool = false;
+        let mut bind_address = None;
+        let mut bind_port = None;
+        let mut period = None;
+        let mut config_path = None;
+        let mut database_path = None;
+        let mut create_database = false;
+        let mut force = false;
+        let mut disable_crawler = false;
 
         {
             let mut ap = ArgumentParser::new();
@@ -66,6 +68,11 @@ impl Settings {
                 StoreTrue,
                 "Force rewrite of local database (default: false)",
             );
+            ap.refer(&mut disable_crawler).add_option(
+                &["-i", "--disable-crawler"],
+                StoreTrue,
+                "Do not start background crawler thread (default: false)",
+            );
             ap.parse_args_or_exit();
         }
 
@@ -93,6 +100,7 @@ impl Settings {
 
         config.create_database |= create_database;
         config.force |= force;
+        config.disable_crawler |= disable_crawler;
         config
     }
 
@@ -123,6 +131,10 @@ impl Settings {
     pub fn force(&self) -> bool {
         self.force
     }
+
+    pub fn disable_crawler(&self) -> bool {
+        self.disable_crawler
+    }
 }
 
 
@@ -136,6 +148,7 @@ impl Default for Settings {
             database_path: "local.sqlite".into(),
             create_database: false,
             force: false,
+            disable_crawler: false,
         }
     }
 }
