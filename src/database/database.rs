@@ -1,96 +1,26 @@
-use std::error::Error;
 use std::fmt::Debug;
-use std::fmt::Display;
-use std::fmt::Error as FmtError;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
 use std::fs;
-use std::io::Error as IoError;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::PoisonError;
 
 use sqlite::Connection;
-use sqlite::Error as SqlError;
 use sqlite::State;
 use sqlite::Value;
 use sqlite;
+
+use super::Category;
+use super::DatabaseError;
+use super::Product;
+use super::ProductPrice;
+use super::Shop;
 
 
 #[derive(Clone)]
 pub struct Database {
     connection: Arc<Mutex<Connection>>,
-}
-
-
-#[derive(Debug, Clone)]
-pub enum DatabaseError {
-    IsDirectoryError { path: PathBuf },
-    SqlError { description: String },
-    IoError { description: String },
-    LockError,
-    NoData,
-}
-
-
-impl DatabaseError {
-    fn is_directory(path: PathBuf) -> DatabaseError {
-        DatabaseError::IsDirectoryError { path }
-    }
-
-    fn no_data() -> DatabaseError {
-        DatabaseError::NoData
-    }
-}
-
-
-impl From<IoError> for DatabaseError {
-    fn from(error: IoError) -> DatabaseError {
-        DatabaseError::IoError { description: error.description().into() }
-    }
-}
-
-
-impl From<SqlError> for DatabaseError {
-    fn from(error: SqlError) -> DatabaseError {
-        DatabaseError::SqlError { description: error.description().into() }
-    }
-}
-
-
-impl<T> From<PoisonError<T>> for DatabaseError {
-    fn from(_: PoisonError<T>) -> DatabaseError {
-        DatabaseError::LockError
-    }
-}
-
-
-impl Display for DatabaseError {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            &DatabaseError::IsDirectoryError { ref path } => {
-                write!(f, "Database path is directory: {}", path.display())
-            }
-            &DatabaseError::SqlError { ref description } => write!(f, "SQL error: {}", description),
-            &DatabaseError::IoError { ref description } => write!(f, "IO error: {}", description),
-            &DatabaseError::LockError => write!(f, "Mutex lock error"),
-            &DatabaseError::NoData => write!(f, "No data"),
-        }
-    }
-}
-
-
-impl Error for DatabaseError {
-    fn description(&self) -> &str {
-        match self {
-            &DatabaseError::IsDirectoryError { .. } => "Database path is directory",
-            &DatabaseError::SqlError { .. } => "SQL error",
-            &DatabaseError::IoError { .. } => "IO error",
-            &DatabaseError::LockError => "Mutex lock error",
-            &DatabaseError::NoData => "No data",
-        }
-    }
 }
 
 
@@ -160,6 +90,209 @@ impl Database {
         save_product_price(&mut connection, product_id, iteration, timestamp, price)?;
 
         Ok(())
+    }
+
+    pub fn last_iteration(&self) -> Result<Option<i64>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let last_iteration = get_last_iteration(&mut connection)?;
+
+        Ok(last_iteration)
+    }
+
+    pub fn product_prices(
+        &self,
+        iteration_from: i64,
+        iteration_to: i64,
+    ) -> Result<Vec<ProductPrice>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let product_prices = get_product_prices(&mut connection, iteration_from, iteration_to)?;
+
+        Ok(product_prices)
+    }
+
+    pub fn product(&self, id: i64) -> Result<Option<Product>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let product = get_product(&mut connection, id)?;
+
+        Ok(product)
+    }
+
+    pub fn category(&self, id: i64) -> Result<Option<Category>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let category = get_category(&mut connection, id)?;
+
+        Ok(category)
+    }
+
+    pub fn shop(&self, id: i64) -> Result<Option<Shop>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let shop = get_shop(&mut connection, id)?;
+
+        Ok(shop)
+    }
+
+    pub fn products(&self) -> Result<Vec<Product>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let products = get_products(&mut connection)?;
+
+        Ok(products)
+    }
+
+    pub fn categories(&self) -> Result<Vec<Category>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let categories = get_categories(&mut connection)?;
+
+        Ok(categories)
+    }
+
+    pub fn shops(&self) -> Result<Vec<Shop>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let shops = get_shops(&mut connection)?;
+
+        Ok(shops)
+    }
+}
+
+
+fn get_shops(connection: &mut Connection) -> Result<Vec<Shop>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id, name FROM shop")?;
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let name = statement.read(1)?;
+
+        result.push(Shop::new(id, name));
+    }
+
+    Ok(result)
+}
+
+fn get_categories(connection: &mut Connection) -> Result<Vec<Category>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id, name FROM category")?;
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let name = statement.read(1)?;
+
+        result.push(Category::new(id, name));
+    }
+
+    Ok(result)
+}
+
+fn get_products(connection: &mut Connection) -> Result<Vec<Product>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, shop_id, category_id, url, name FROM product",
+    )?;
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let shop_id = statement.read(1)?;
+        let category_id = statement.read(2)?;
+        let url = statement.read(3)?;
+        let name = statement.read(4)?;
+
+        result.push(Product::new(id, shop_id, category_id, url, name));
+    }
+
+    Ok(result)
+}
+
+fn get_shop(connection: &mut Connection, id: i64) -> Result<Option<Shop>, DatabaseError> {
+    let mut statement = connection.prepare("SELECT id, name FROM shop WHERE id = ?")?;
+    statement.bind(1, id)?;
+
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let name = statement.read(1)?;
+
+        Ok(Some(Shop::new(id, name)))
+    } else {
+        Ok(None)
+    }
+}
+
+fn get_category(connection: &mut Connection, id: i64) -> Result<Option<Category>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, name FROM category WHERE id = ?",
+    )?;
+    statement.bind(1, id)?;
+
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let name = statement.read(1)?;
+
+        Ok(Some(Category::new(id, name)))
+    } else {
+        Ok(None)
+    }
+}
+
+fn get_product(connection: &mut Connection, id: i64) -> Result<Option<Product>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, shop_id, category_id, url, name FROM product WHERE id = ?",
+    )?;
+    statement.bind(1, id)?;
+
+    if let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let shop_id = statement.read(1)?;
+        let category_id = statement.read(2)?;
+        let url = statement.read(3)?;
+        let name = statement.read(4)?;
+
+        Ok(Some(Product::new(id, shop_id, category_id, url, name)))
+    } else {
+        Ok(None)
+    }
+}
+
+fn get_product_prices(
+    connection: &mut Connection,
+    iteration_from: i64,
+    iteration_to: i64,
+) -> Result<Vec<ProductPrice>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, product_id, iteration, timestamp, price FROM product_price WHERE iteration BETWEEN ? AND ?",
+    )?;
+    statement.bind(1, iteration_from)?;
+    statement.bind(2, iteration_to)?;
+
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let product_id = statement.read(1)?;
+        let iteration = statement.read(2)?;
+        let timestamp = statement.read(3)?;
+        let price = statement.read(4)?;
+
+        result.push(ProductPrice::new(
+            id,
+            product_id,
+            iteration,
+            timestamp,
+            price,
+        ));
+    }
+
+    Ok(result)
+}
+
+fn get_last_iteration(connection: &mut Connection) -> Result<Option<i64>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT MAX(iteration) FROM product_price",
+    )?;
+
+    if let State::Row = statement.next()? {
+        let last_iteration = statement.read(0)?;
+
+        Ok(Some(last_iteration))
+    } else {
+        Ok(None)
     }
 }
 

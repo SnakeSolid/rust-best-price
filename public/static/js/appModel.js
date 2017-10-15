@@ -21,7 +21,11 @@ define([ "knockout", "reqwest", "messageModel" ], function(ko, reqwest, message)
 			type: "json",
 			contentType: "application/json"
 		}).then(function (resp) {
-			self.products(resp);
+			if (resp.ok) {
+				self.products(resp.products);
+			} else {
+				self.messages.push(message.warn(resp.message, "Product price"));
+			}
 		}).fail(function (err) {
 			self.messages.push(message.error("Failed to load products", "Product price"));
 		});
