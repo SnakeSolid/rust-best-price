@@ -19,6 +19,8 @@
         </div>
       </div>
 
+      <div data-bind="asChart: chart"></div>
+
       <table class="ui celled striped table" data-bind="visible: isTableVisible">
         <thead>
           <tr>
@@ -32,7 +34,7 @@
 
         <tbody data-bind="foreach: products">
           <tr>
-            <td class="collapsing">
+            <td>
               <span data-bind="text: category"></span>
             </td>
 
@@ -44,7 +46,7 @@
               <span data-bind="text: shop"></span>
             </td>
 
-            <td>
+            <td class="right aligned">
               <span data-bind="asFixed: price"></span>
             </td>
 

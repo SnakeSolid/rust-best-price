@@ -1,6 +1,6 @@
 "use strict";
 
-define([ "knockout", "reqwest", "bindingHandlers", "messageModel" ], function(ko, reqwest, message) {
+define([ "knockout", "reqwest", "messageModel", "chartModel" ], function(ko, reqwest, message, chart) {
 	const byCategory = function(a, b) {
 		if (a.category < b.category) {
 			return -1;
@@ -16,6 +16,7 @@ define([ "knockout", "reqwest", "bindingHandlers", "messageModel" ], function(ko
 
 		this.messages = ko.observableArray([]);
 		this.products = ko.observableArray([]);
+		this.chart = new chart();
 
 		this.isTableVisible = ko.pureComputed(function() {
 			return this.products().length > 0;
