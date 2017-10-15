@@ -1,6 +1,16 @@
 "use strict";
 
-define([ "knockout", "reqwest", "messageModel" ], function(ko, reqwest, message) {
+define([ "knockout", "reqwest", "bindingHandlers", "messageModel" ], function(ko, reqwest, message) {
+	const byCategory = function(a, b) {
+		if (a.category < b.category) {
+			return -1;
+		} else if (a.category > b.category) {
+			return 1;
+		} else {
+			return 0;
+		}
+	};
+
 	return function() {
 		const self = this;
 
@@ -22,7 +32,7 @@ define([ "knockout", "reqwest", "messageModel" ], function(ko, reqwest, message)
 			contentType: "application/json"
 		}).then(function (resp) {
 			if (resp.ok) {
-				self.products(resp.products);
+				self.products(resp.products.sort(byCategory));
 			} else {
 				self.messages.push(message.warn(resp.message, "Product price"));
 			}
