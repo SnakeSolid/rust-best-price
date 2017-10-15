@@ -2,16 +2,24 @@ macro_rules! check_text {
     ( $x: expr, $msg: expr ) => {{
         match $x {
             Ok(value) => value,
-            Err(_) => return Ok(Response::with((status::InternalServerError, $msg))),
+            Err(_) => {
+                warn!("Handler error: {}", $msg);
+
+                return Ok(Response::with((status::InternalServerError)));
+            }
         }
-    }}
+    }};
 }
 
 macro_rules! check_error {
     ( $x: expr ) => {{
         match $x {
             Ok(value) => value,
-            Err(error) => return Ok(Response::with((status::InternalServerError, error.description()))),
+            Err(error) => {
+                warn!("Handler error: {}", error.description());
+
+                return Ok(Response::with((status::InternalServerError)));
+            }
         }
-    }}
+    }};
 }
