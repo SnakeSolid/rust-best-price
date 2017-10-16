@@ -21,6 +21,7 @@ extern crate tendril;
 extern crate time;
 extern crate tokio_core;
 extern crate toml;
+extern crate urlencoded;
 
 mod backend;
 mod database;

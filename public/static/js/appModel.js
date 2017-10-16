@@ -31,7 +31,7 @@ define([ "knockout", "reqwest", "messageModel", "chartModel" ], function(ko, req
 		}, this);
 
 		reqwest({
-			url: "/api/v1/price",
+			url: "/api/v1/product",
 			method: "get",
 			type: "json",
 			contentType: "application/json"

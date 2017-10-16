@@ -151,8 +151,79 @@ impl Database {
 
         Ok(shops)
     }
+
+    pub fn products_by_category(&self, category_id: i64) -> Result<Vec<Product>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let products = get_products_by_category(&mut connection, category_id)?;
+
+        Ok(products)
+    }
+
+    pub fn product_prices_by_product(
+        &self,
+        product_id: i64,
+    ) -> Result<Vec<ProductPrice>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let products = get_product_prices_by_product(&mut connection, product_id)?;
+
+        Ok(products)
+    }
 }
 
+
+fn get_product_prices_by_product(
+    connection: &mut Connection,
+    product_id: i64,
+) -> Result<Vec<ProductPrice>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, product_id, iteration, timestamp, price FROM product_price WHERE product_id = ?",
+    )?;
+    statement.bind(1, product_id)?;
+
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let product_id = statement.read(1)?;
+        let iteration = statement.read(2)?;
+        let timestamp = statement.read(3)?;
+        let price = statement.read(4)?;
+
+        result.push(ProductPrice::new(
+            id,
+            product_id,
+            iteration,
+            timestamp,
+            price,
+        ));
+    }
+
+    Ok(result)
+}
+
+fn get_products_by_category(
+    connection: &mut Connection,
+    category_id: i64,
+) -> Result<Vec<Product>, DatabaseError> {
+    let mut statement = connection.prepare(
+        "SELECT id, shop_id, category_id, url, name FROM product WHERE category_id = ?",
+    )?;
+    statement.bind(1, category_id)?;
+
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let id = statement.read(0)?;
+        let shop_id = statement.read(1)?;
+        let category_id = statement.read(2)?;
+        let url = statement.read(3)?;
+        let name = statement.read(4)?;
+
+        result.push(Product::new(id, shop_id, category_id, url, name));
+    }
+
+    Ok(result)
+}
 
 fn get_shops(connection: &mut Connection) -> Result<Vec<Shop>, DatabaseError> {
     let mut statement = connection.prepare("SELECT id, name FROM shop")?;

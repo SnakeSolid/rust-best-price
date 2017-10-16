@@ -1,7 +1,25 @@
 [package]
 name = "best-price"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Anton Shabanov <snakesolid@ngs.ru>"]
+
+[profile.dev]
+opt-level = 0
+debug = true
+rpath = false
+lto = false
+debug-assertions = true
+codegen-units = 2
+panic = "unwind"
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = "abort"
 
 [dependencies]
 argparse = "0.2"
@@ -24,3 +42,4 @@ tendril = "0.4"
 time = "0.1"
 tokio-core = "0.1"
 toml = "0.4"
+urlencoded = "0.5"

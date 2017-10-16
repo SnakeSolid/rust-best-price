@@ -8,6 +8,7 @@ use database::Database;
 use super::error::BackendError;
 use super::handler::EmptyHandler;
 use super::handler::PriceHandler;
+use super::handler::ProductHandler;
 
 
 pub fn start_backend(
@@ -16,7 +17,8 @@ pub fn start_backend(
     bind_port: u16,
 ) -> Result<(), BackendError> {
     let mut router = Router::new();
-    router.get("/price", PriceHandler::new(database), "price");
+    router.get("/price", PriceHandler::new(database.clone()), "price");
+    router.get("/product", ProductHandler::new(database), "product");
     router.get("/", EmptyHandler::new(), "empty");
 
     let mut mount = Mount::new();
