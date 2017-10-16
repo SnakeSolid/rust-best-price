@@ -18,12 +18,16 @@ define([ "knockout", "reqwest", "messageModel", "chartModel" ], function(ko, req
 		this.products = ko.observableArray([]);
 		this.chart = new chart();
 
+		this.hasMessages = ko.pureComputed(function() {
+			return this.messages().length > 0;
+		}, this);
+
 		this.isTableVisible = ko.pureComputed(function() {
 			return this.products().length > 0;
 		}, this);
 
-		this.hasMessages = ko.pureComputed(function() {
-			return this.messages().length > 0;
+		this.isChartVisible = ko.pureComputed(function() {
+			return this.chart.isVisible();
 		}, this);
 
 		reqwest({

@@ -33,17 +33,33 @@ define([ "knockout", "moment", "chart" ], function(ko, moment, chart) {
 			const value = valueAccessor();
 			const valueUnwrapped = ko.unwrap(value);
 			const data = valueUnwrapped.data();
-			const options = valueUnwrapped.options();
-			const g = new chart(element, data, options);
 
-			valueUnwrapped._g = g;
+			if (data.length > 1) {
+				const options = valueUnwrapped.options();
+				const g = new chart(element, data, options);
+
+				valueUnwrapped._g = g;
+			}
 		}, update: function(element, valueAccessor, allBindings) {
 			const value = valueAccessor();
 			const valueUnwrapped = ko.unwrap(value);
 			const data = valueUnwrapped.data();
-			const g = valueUnwrapped._g;
 
-			g.updateOptions( { "file": data } );
+			if (data.length > 1) {
+				const g = valueUnwrapped._g;
+				const options = valueUnwrapped.options();
+				const updateOptions = {};
+
+				Object.assign(updateOptions, options);
+
+				if (!g) {
+					Object.assign(updateOptions, { "file": data });
+
+					g.updateOptions( updateOptions );
+				} else {
+					valueUnwrapped._g = new chart(element, data, options);
+				}
+			}
 		}
 	};
 });

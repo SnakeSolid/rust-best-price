@@ -2,16 +2,17 @@
 
 define([ "knockout" ], function(ko) {
 	return function() {
-		this.data = ko.observableArray([
-			[ new Date(1508084250), 1 ],
-			[ new Date(1508084253), 2 ],
-			[ new Date(1508084255), 2 ],
-			[ new Date(1508084257), 4 ],
-			[ new Date(1508084263), 1 ],
-		]);
+		this.data = ko.observableArray([]);
 		this.options = ko.observable({
 			connectSeparatedPoints: true,
 			drawGapEdgePoints: true,
+			labels: [ "Update time", "-" ],
+			legend: "always",
+			width: 1097,
 		});
+
+		this.isVisible = ko.pureComputed(function() {
+			return this.date,length > 1;
+		}, this);
 	};
 });
