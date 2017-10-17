@@ -11,11 +11,10 @@ use sqlite::State;
 use sqlite::Value;
 use sqlite;
 
-use super::Category;
 use super::DatabaseError;
+use super::IterationPrice;
 use super::Product;
 use super::ProductPrice;
-use super::Shop;
 
 
 #[derive(Clone)]
@@ -99,59 +98,6 @@ impl Database {
         Ok(last_iteration)
     }
 
-    pub fn product_prices(
-        &self,
-        iteration_from: i64,
-        iteration_to: i64,
-    ) -> Result<Vec<ProductPrice>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let product_prices = get_product_prices(&mut connection, iteration_from, iteration_to)?;
-
-        Ok(product_prices)
-    }
-
-    pub fn product(&self, id: i64) -> Result<Option<Product>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let product = get_product(&mut connection, id)?;
-
-        Ok(product)
-    }
-
-    pub fn category(&self, id: i64) -> Result<Option<Category>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let category = get_category(&mut connection, id)?;
-
-        Ok(category)
-    }
-
-    pub fn shop(&self, id: i64) -> Result<Option<Shop>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let shop = get_shop(&mut connection, id)?;
-
-        Ok(shop)
-    }
-
-    pub fn products(&self) -> Result<Vec<Product>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let products = get_products(&mut connection)?;
-
-        Ok(products)
-    }
-
-    pub fn categories(&self) -> Result<Vec<Category>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let categories = get_categories(&mut connection)?;
-
-        Ok(categories)
-    }
-
-    pub fn shops(&self) -> Result<Vec<Shop>, DatabaseError> {
-        let mut connection = self.connection.lock()?;
-        let shops = get_shops(&mut connection)?;
-
-        Ok(shops)
-    }
-
     pub fn products_by_category(&self, category_id: i64) -> Result<Vec<Product>, DatabaseError> {
         let mut connection = self.connection.lock()?;
         let products = get_products_by_category(&mut connection, category_id)?;
@@ -168,34 +114,87 @@ impl Database {
 
         Ok(products)
     }
+
+    pub fn product_price_by_iteration(
+        &self,
+        iteration_from: i64,
+        iteration_to: i64,
+    ) -> Result<Vec<IterationPrice>, DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        let product_prices =
+            get_product_price_by_iteration(&mut connection, iteration_from, iteration_to)?;
+
+        Ok(product_prices)
+    }
 }
 
+
+fn get_product_price_by_iteration(
+    connection: &mut Connection,
+    iteration_from: i64,
+    iteration_to: i64,
+) -> Result<Vec<IterationPrice>, DatabaseError> {
+    let mut statement = connection.prepare(
+        r#"
+SELECT
+    p.category_id,
+    c.name,
+    p.name,
+    p.url,
+    s.name,
+    pp.price,
+    pp.timestamp
+FROM product_price AS pp
+    INNER JOIN product AS p ON ( p.id = pp.product_id )
+    INNER JOIN category AS c ON ( c.id = p.category_id )
+    INNER JOIN shop as s ON ( s.id = p.shop_id )
+WHERE pp.iteration BETWEEN ? AND ?
+"#,
+    )?;
+    statement.bind(1, iteration_from)?;
+    statement.bind(2, iteration_to)?;
+
+    let mut result = Vec::new();
+
+    while let State::Row = statement.next()? {
+        let category_id = statement.read(0)?;
+        let category = statement.read(1)?;
+        let product = statement.read(2)?;
+        let url = statement.read(3)?;
+        let shop = statement.read(4)?;
+        let price = statement.read(5)?;
+        let timestamp = statement.read(6)?;
+
+        result.push(IterationPrice::new(
+            category_id,
+            category,
+            product,
+            url,
+            shop,
+            price,
+            timestamp,
+        ));
+    }
+
+    Ok(result)
+}
 
 fn get_product_prices_by_product(
     connection: &mut Connection,
     product_id: i64,
 ) -> Result<Vec<ProductPrice>, DatabaseError> {
     let mut statement = connection.prepare(
-        "SELECT id, product_id, iteration, timestamp, price FROM product_price WHERE product_id = ?",
+        "SELECT timestamp, price FROM product_price WHERE product_id = ?",
     )?;
     statement.bind(1, product_id)?;
 
     let mut result = Vec::new();
 
     while let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let product_id = statement.read(1)?;
-        let iteration = statement.read(2)?;
-        let timestamp = statement.read(3)?;
-        let price = statement.read(4)?;
+        let timestamp = statement.read(0)?;
+        let price = statement.read(1)?;
 
-        result.push(ProductPrice::new(
-            id,
-            product_id,
-            iteration,
-            timestamp,
-            price,
-        ));
+        result.push(ProductPrice::new(timestamp, price));
     }
 
     Ok(result)
@@ -206,7 +205,7 @@ fn get_products_by_category(
     category_id: i64,
 ) -> Result<Vec<Product>, DatabaseError> {
     let mut statement = connection.prepare(
-        "SELECT id, shop_id, category_id, url, name FROM product WHERE category_id = ?",
+        "SELECT id, name FROM product WHERE category_id = ?",
     )?;
     statement.bind(1, category_id)?;
 
@@ -214,140 +213,9 @@ fn get_products_by_category(
 
     while let State::Row = statement.next()? {
         let id = statement.read(0)?;
-        let shop_id = statement.read(1)?;
-        let category_id = statement.read(2)?;
-        let url = statement.read(3)?;
-        let name = statement.read(4)?;
-
-        result.push(Product::new(id, shop_id, category_id, url, name));
-    }
-
-    Ok(result)
-}
-
-fn get_shops(connection: &mut Connection) -> Result<Vec<Shop>, DatabaseError> {
-    let mut statement = connection.prepare("SELECT id, name FROM shop")?;
-    let mut result = Vec::new();
-
-    while let State::Row = statement.next()? {
-        let id = statement.read(0)?;
         let name = statement.read(1)?;
 
-        result.push(Shop::new(id, name));
-    }
-
-    Ok(result)
-}
-
-fn get_categories(connection: &mut Connection) -> Result<Vec<Category>, DatabaseError> {
-    let mut statement = connection.prepare("SELECT id, name FROM category")?;
-    let mut result = Vec::new();
-
-    while let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let name = statement.read(1)?;
-
-        result.push(Category::new(id, name));
-    }
-
-    Ok(result)
-}
-
-fn get_products(connection: &mut Connection) -> Result<Vec<Product>, DatabaseError> {
-    let mut statement = connection.prepare(
-        "SELECT id, shop_id, category_id, url, name FROM product",
-    )?;
-    let mut result = Vec::new();
-
-    while let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let shop_id = statement.read(1)?;
-        let category_id = statement.read(2)?;
-        let url = statement.read(3)?;
-        let name = statement.read(4)?;
-
-        result.push(Product::new(id, shop_id, category_id, url, name));
-    }
-
-    Ok(result)
-}
-
-fn get_shop(connection: &mut Connection, id: i64) -> Result<Option<Shop>, DatabaseError> {
-    let mut statement = connection.prepare("SELECT id, name FROM shop WHERE id = ?")?;
-    statement.bind(1, id)?;
-
-    if let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let name = statement.read(1)?;
-
-        Ok(Some(Shop::new(id, name)))
-    } else {
-        Ok(None)
-    }
-}
-
-fn get_category(connection: &mut Connection, id: i64) -> Result<Option<Category>, DatabaseError> {
-    let mut statement = connection.prepare(
-        "SELECT id, name FROM category WHERE id = ?",
-    )?;
-    statement.bind(1, id)?;
-
-    if let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let name = statement.read(1)?;
-
-        Ok(Some(Category::new(id, name)))
-    } else {
-        Ok(None)
-    }
-}
-
-fn get_product(connection: &mut Connection, id: i64) -> Result<Option<Product>, DatabaseError> {
-    let mut statement = connection.prepare(
-        "SELECT id, shop_id, category_id, url, name FROM product WHERE id = ?",
-    )?;
-    statement.bind(1, id)?;
-
-    if let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let shop_id = statement.read(1)?;
-        let category_id = statement.read(2)?;
-        let url = statement.read(3)?;
-        let name = statement.read(4)?;
-
-        Ok(Some(Product::new(id, shop_id, category_id, url, name)))
-    } else {
-        Ok(None)
-    }
-}
-
-fn get_product_prices(
-    connection: &mut Connection,
-    iteration_from: i64,
-    iteration_to: i64,
-) -> Result<Vec<ProductPrice>, DatabaseError> {
-    let mut statement = connection.prepare(
-        "SELECT id, product_id, iteration, timestamp, price FROM product_price WHERE iteration BETWEEN ? AND ?",
-    )?;
-    statement.bind(1, iteration_from)?;
-    statement.bind(2, iteration_to)?;
-
-    let mut result = Vec::new();
-
-    while let State::Row = statement.next()? {
-        let id = statement.read(0)?;
-        let product_id = statement.read(1)?;
-        let iteration = statement.read(2)?;
-        let timestamp = statement.read(3)?;
-        let price = statement.read(4)?;
-
-        result.push(ProductPrice::new(
-            id,
-            product_id,
-            iteration,
-            timestamp,
-            price,
-        ));
+        result.push(Product::new(id, name));
     }
 
     Ok(result)
@@ -375,7 +243,10 @@ fn save_product_price(
     price: f64,
 ) -> Result<(), DatabaseError> {
     let statement = connection.prepare(
-        "INSERT INTO product_price ( product_id, iteration, timestamp, price ) VALUES ( ?, ?, ?, ? )",
+        r#"
+INSERT INTO product_price ( product_id, iteration, timestamp, price )
+VALUES ( ?, ?, ?, ? )
+"#,
     )?;
     let mut cursor = statement.cursor();
     cursor.bind(

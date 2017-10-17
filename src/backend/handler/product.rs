@@ -9,12 +9,8 @@ use iron::Response;
 use iron::status;
 use serde_json;
 
-use database::Category;
 use database::Database;
-use database::DatabaseError;
-use database::Product as DbProduct;
-use database::ProductPrice;
-use database::Shop;
+use database::IterationPrice;
 
 
 pub struct ProductHandler {
@@ -94,74 +90,36 @@ impl Handler for ProductHandler {
         let mut best_products = Vec::new();
 
         if let Some(last_iteration) = last_iteration {
-            let shops = check_error!(self.shops());
-            let categories = check_error!(self.categories());
-            let products = check_error!(self.products());
-            let mut selected_products: HashMap<_, ProductPrice> = HashMap::new();
+            let mut products_by_category: HashMap<_, IterationPrice> = HashMap::new();
 
-            for product_price in check_error!(
-                self.database.product_prices(last_iteration, last_iteration)
-            )
+            for product_price in check_error!(self.database.product_price_by_iteration(
+                last_iteration,
+                last_iteration,
+            ))
             {
-                let product_id = product_price.product_id();
-                let product = match products.get(&product_id) {
-                    Some(product) => product,
-                    None => {
-                        warn!("Product {} not found", product_id);
+                let category_id = product_price.category_id();
 
-                        continue;
-                    }
-                };
-                let category_id = product.category_id();
-                let insert_product = match selected_products.get(&category_id) {
+                let insert_product = match products_by_category.get(&category_id) {
                     Some(selected_price) if selected_price.price() < product_price.price() => false,
                     Some(_) => true,
                     None => true,
                 };
 
                 if insert_product {
-                    selected_products.insert(category_id, product_price);
+                    products_by_category.insert(category_id, product_price);
                 }
             }
 
-            for (category_id, product_price) in selected_products.drain() {
-                let product_id = product_price.product_id();
-                let product = match products.get(&product_id) {
-                    Some(product) => product,
-                    None => {
-                        warn!("Product {} not found", product_id);
-
-                        continue;
-                    }
-                };
-                let category = match categories.get(&category_id) {
-                    Some(category) => category,
-                    None => {
-                        warn!("Category {} not found", product_id);
-
-                        continue;
-                    }
-                };
-                let shop_id = product.shop_id();
-                let shop = match shops.get(&shop_id) {
-                    Some(shop) => shop,
-                    None => {
-                        warn!("Shop {} not found", product_id);
-
-                        continue;
-                    }
-                };
-                let product = ResponseProduct::new(
+            for (category_id, product_price) in products_by_category.drain() {
+                best_products.push(ResponseProduct::new(
                     category_id,
-                    category.name(),
-                    product.name(),
-                    product.url(),
-                    shop.name(),
+                    product_price.category(),
+                    product_price.product(),
+                    product_price.url(),
+                    product_price.shop(),
                     product_price.price(),
                     product_price.timestamp(),
-                );
-
-                best_products.push(product);
+                ));
             }
         }
 
@@ -169,37 +127,5 @@ impl Handler for ProductHandler {
         let body = check_error!(serde_json::to_string(&response));
 
         Ok(Response::with((content_type, status::Ok, body)))
-    }
-}
-
-impl ProductHandler {
-    fn shops(&self) -> Result<HashMap<i64, Shop>, DatabaseError> {
-        let mut result = HashMap::new();
-
-        for shop in self.database.shops()? {
-            result.insert(shop.id(), shop);
-        }
-
-        Ok(result)
-    }
-
-    fn categories(&self) -> Result<HashMap<i64, Category>, DatabaseError> {
-        let mut result = HashMap::new();
-
-        for category in self.database.categories()? {
-            result.insert(category.id(), category);
-        }
-
-        Ok(result)
-    }
-
-    fn products(&self) -> Result<HashMap<i64, DbProduct>, DatabaseError> {
-        let mut result = HashMap::new();
-
-        for product in self.database.products()? {
-            result.insert(product.id(), product);
-        }
-
-        Ok(result)
     }
 }

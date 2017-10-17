@@ -21,7 +21,9 @@ pub struct PriceHandler {
 #[derive(Serialize)]
 struct HandlerResponse {
     ok: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     products: Option<Vec<ResponseProductPrice>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<String>,
 }
 
