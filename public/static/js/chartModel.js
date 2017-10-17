@@ -18,11 +18,15 @@ define([ "knockout", "moment" ], function(ko, moment) {
 		this.options = ko.observable({
 			width: 1097,
 			height: 320,
-			connectSeparatedPoints: true,
 			drawGapEdgePoints: true,
+			drawPoints: true,
+			highlightCircleSize: 2.5,
+			labelsSeparateLines: true,
+			panEdgeFraction: 0.25,
+			showLabelsOnHighlight: true,
 			stepPlot: true,
+			strokeBorderWidth: 2,
 			labels: [ "Update time", "-" ],
-			legend: "always",
 		});
 
 		this.isVisible = ko.pureComputed(function() {
@@ -55,15 +59,9 @@ define([ "knockout", "moment" ], function(ko, moment) {
 				return null;
 			});
 			const data_values = data_points.map(function(point) {
-				const values = data_sample.map(function (value, index) {
-					if (index == point.index) {
-						return point.price;
-					} else {
-						return value;
-					}
-				});
+				data_sample[point.index] = point.price;
 
-				return [ moment.unix(point.timestamp).toDate() ].concat(values);
+				return [ moment.unix(point.timestamp).toDate() ].concat(data_sample);
 			});
 
 			self.options().labels = labels;
