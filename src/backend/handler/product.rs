@@ -31,6 +31,7 @@ struct HandlerResponse {
 
 #[derive(Serialize)]
 struct ResponseProduct {
+    category_id: i64,
     category: String,
     product: String,
     url: String,
@@ -52,6 +53,7 @@ impl HandlerResponse {
 
 impl ResponseProduct {
     fn new<S1, S2, S3, S4>(
+        category_id: i64,
         category: S1,
         product: S2,
         url: S3,
@@ -66,6 +68,7 @@ impl ResponseProduct {
         S4: Into<String>,
     {
         ResponseProduct {
+            category_id: category_id,
             category: category.into(),
             product: product.into(),
             url: url.into(),
@@ -149,6 +152,7 @@ impl Handler for ProductHandler {
                     }
                 };
                 let product = ResponseProduct::new(
+                    category_id,
                     category.name(),
                     product.name(),
                     product.url(),

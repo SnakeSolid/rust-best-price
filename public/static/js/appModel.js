@@ -30,6 +30,23 @@ define([ "knockout", "reqwest", "messageModel", "chartModel" ], function(ko, req
 			return this.chart.isVisible();
 		}, this);
 
+		this.showChart = function(data, event) {
+			reqwest({
+				url: "/api/v1/price?category=" + data.category_id,
+				method: "get",
+				type: "json",
+				contentType: "application/json"
+			}).then(function (resp) {
+				if (resp.ok) {
+					self.chart.setData(resp.products);
+				} else {
+					self.messages.push(message.warn(resp.message, "Product price"));
+				}
+			}).fail(function(err) {
+				self.messages.push(message.error("Failed to load price list", "Price list"));
+			});
+		};
+
 		reqwest({
 			url: "/api/v1/product",
 			method: "get",

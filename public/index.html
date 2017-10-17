@@ -19,23 +19,28 @@
         </div>
       </div>
 
-      <div data-bind="asChart: chart, visible: isChartVisible"></div>
+      <div data-bind="visible: isChartVisible">
+        <div data-bind="asChart: chart"></div>
+      </div>
 
       <table class="ui celled striped table" data-bind="visible: isTableVisible">
         <thead>
           <tr>
-            <th>Category</th>
-            <th>Product</th>
-            <th>Shop</th>
-            <th>Price</th>
-            <th>Updated</th>
+            <th class="three wide">Category</th>
+            <th class="seven wide">Product</th>
+            <th class="two wide">Shop</th>
+            <th class="two wide">Price</th>
+            <th class="two wide">Updated</th>
           </tr>
         </thead>
 
         <tbody data-bind="foreach: products">
           <tr>
             <td>
-              <span data-bind="text: category"></span>
+              <button class="ui compact labeled icon button" data-bind="click: $parent.showChart">
+                <i class="line chart icon"></i>
+                <span data-bind="text: category"></span>
+              </button>
             </td>
 
             <td>

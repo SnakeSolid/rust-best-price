@@ -52,7 +52,7 @@ define([ "knockout", "moment", "chart" ], function(ko, moment, chart) {
 
 				Object.assign(updateOptions, options);
 
-				if (!g) {
+				if (g) {
 					Object.assign(updateOptions, { "file": data });
 
 					g.updateOptions( updateOptions );
