@@ -1,6 +1,6 @@
 [package]
 name = "best-price"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Anton Shabanov <snakesolid@ngs.ru>"]
 
 [profile.dev]
