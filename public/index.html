@@ -40,18 +40,19 @@
   </div>
 
   <div class="ui container">
-    <div class="ui segment">
-      <div data-bind="visible: hasMessages, foreach: messages">
-        <div class="ui message" data-bind="css: { info: isInfo, warning: isWarning, error: isError }">
-          <div class="header" data-bind="visible: hasHeader, text: header"></div>
-          <p data-bind="text: message"></p>
-        </div>
+    <div class="ui vertical segment" data-bind="foreach: messages, visible: hasMessages">
+      <div class="ui message" data-bind="css: { info: isInfo, warning: isWarning, error: isError }">
+        <div class="header" data-bind="visible: hasHeader, text: header"></div>
+        <p data-bind="text: message"></p>
       </div>
+    </div>
 
-      <div data-bind="visible: isChartVisible">
-        <div data-bind="asChart: chart"></div>
-      </div>
+    <div class="ui vertical segment" data-bind="visible: isChartVisible, css: { loading: isChartLoading }">
+      <h3>Product prices for category:&nbsp;<span data-bind="text: chartCategoryName">&hellip;</span></h3>
+      <div data-bind="asChart: chart"></div>
+    </div>
 
+    <div class="ui vertical segment" data-bind="css: { loading: isProductsLoading }">
       <table class="ui celled striped table" data-bind="visible: isTableVisible">
         <thead>
           <tr>

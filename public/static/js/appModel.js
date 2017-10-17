@@ -17,7 +17,10 @@ define([ "knockout", "reqwest", "moment", "messageModel", "chartModel" ], functi
 		this.messages = ko.observableArray([]);
 		this.products = ko.observableArray([]);
 		this.chart = new chart();
+		this.chartCategoryName = ko.observable("");
 		this.lastUpdate = ko.observable(null);
+		this.isProductsLoading = ko.observable(true);
+		this.isChartLoading = ko.observable(true);
 
 		this.lastUpdateText = ko.pureComputed(function() {
 			const lastUpdate = this.lastUpdate();
@@ -32,9 +35,6 @@ define([ "knockout", "reqwest", "moment", "messageModel", "chartModel" ], functi
 		this.hasMessages = ko.pureComputed(function() {
 			return this.messages().length > 0;
 		}, this);
-
-		this.isProductsLoading = ko.observable(true);
-		this.isChartLoading = ko.observable(true);
 
 		this.isLastUpdateVisible = ko.pureComputed(function() {
 			return this.lastUpdate() !== null;
@@ -62,6 +62,7 @@ define([ "knockout", "reqwest", "moment", "messageModel", "chartModel" ], functi
 
 		this.showChart = function(data, event) {
 			self.isChartLoading(true);
+			self.chartCategoryName(data.category);
 
 			reqwest({
 				url: "/api/v1/price?category=" + data.category_id,
