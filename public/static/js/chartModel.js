@@ -29,6 +29,10 @@ define([ "knockout", "moment" ], function(ko, moment) {
 			return this.data().length > 1;
 		}, this);
 
+		this.hide = function() {
+			this.data([]);
+		};
+
 		this.setData = function(data) {
 			const labels = [ "Update time" ];
 			const data_points = [];

@@ -10,6 +10,35 @@
     <script async data-main="/static/js/init.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js" integrity="sha256-0SGl1PJNDyJwcV5T+weg2zpEMrh7xvlwO4oXgvZCeZk=" data-main="/static/js/init.js" crossorigin="anonymous"></script>
 </head>
 <body>
+  <div class="ui inverted segment">
+    <div class="ui container">
+      <div class="ui inverted menu">
+        <a class="item" data-bind="click: updateProducts, css: { disabled: isProductsLoading }">
+          <i class="refresh icon"></i>
+          Refresh products
+        </a>
+
+        <a class="item" data-bind="click: hideChart, visible: isChartVisible">
+          <i class="line chart icon"></i>
+          Hide chart
+        </a>
+
+        <a class="item" data-bind="click: clearMessagesVisible, visible: isClearMessagesVisible">
+          <i class="remove icon"></i>
+          Clear messages
+        </a>
+
+        <div class="right menu" data-bind="visible: isLastUpdateVisible">
+          <div class="item">
+            <span>last update:</span>
+            &nbsp;
+            <span data-bind="text: lastUpdateText">&hellip;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="ui container">
     <div class="ui segment">
       <div data-bind="visible: hasMessages, foreach: messages">
