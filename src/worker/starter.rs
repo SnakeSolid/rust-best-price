@@ -136,7 +136,15 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
         shops.insert(shop.name.clone(), shop.clone());
     }
 
-    let iteration = time::get_time().sec;
+    let next_iteration = match database.iteration() {
+        Ok(Some(iteration)) => iteration + 1,
+        Ok(None) => 0,
+        Err(error) => {
+            warn!("Can not read current iteration: {}", error);
+
+            0
+        }
+    };
 
     for product in &config.products {
         let timestamp = time::get_time().sec;
@@ -158,7 +166,7 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
                     &product.category,
                     &product.url,
                     &price.name,
-                    iteration,
+                    next_iteration,
                     timestamp,
                     price.price,
                 );
@@ -169,6 +177,10 @@ fn store_products(database: &Database, config: &Config, loader: &mut PriceLoader
             }
             Err(error) => warn!("Product parsing error: {}", error),
         }
+    }
+
+    if let Err(error) = database.save_iteration(next_iteration) {
+        warn!("Can not write next iteration: {}", error);
     }
 }
 

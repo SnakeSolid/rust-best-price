@@ -91,11 +91,18 @@ impl Database {
         Ok(())
     }
 
-    pub fn last_iteration(&self) -> Result<Option<i64>, DatabaseError> {
+    pub fn iteration(&self) -> Result<Option<i64>, DatabaseError> {
         let mut connection = self.connection.lock()?;
-        let last_iteration = get_last_iteration(&mut connection)?;
+        let iteration = get_iteration(&mut connection)?;
 
-        Ok(last_iteration)
+        Ok(iteration)
+    }
+
+    pub fn save_iteration(&self, iteration: i64) -> Result<(), DatabaseError> {
+        let mut connection = self.connection.lock()?;
+        update_iteration(&mut connection, iteration)?;
+
+        Ok(())
     }
 
     pub fn products_by_category(&self, category_id: i64) -> Result<Vec<Product>, DatabaseError> {
@@ -221,9 +228,9 @@ fn get_products_by_category(
     Ok(result)
 }
 
-fn get_last_iteration(connection: &mut Connection) -> Result<Option<i64>, DatabaseError> {
+fn get_iteration(connection: &mut Connection) -> Result<Option<i64>, DatabaseError> {
     let mut statement = connection.prepare(
-        "SELECT MAX(iteration) FROM product_price",
+        "SELECT iteration FROM iteration LIMIT 1",
     )?;
 
     if let State::Row = statement.next()? {
@@ -233,6 +240,15 @@ fn get_last_iteration(connection: &mut Connection) -> Result<Option<i64>, Databa
     } else {
         Ok(None)
     }
+}
+
+fn update_iteration(connection: &mut Connection, iteration: i64) -> Result<(), DatabaseError> {
+    let statement = connection.prepare("UPDATE iteration SET iteration = ?")?;
+    let mut cursor = statement.cursor();
+    cursor.bind(&[Value::Integer(iteration)])?;
+    cursor.next()?;
+
+    Ok(())
 }
 
 fn save_product_price(

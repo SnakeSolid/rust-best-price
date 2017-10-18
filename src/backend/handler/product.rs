@@ -86,15 +86,15 @@ impl ProductHandler {
 impl Handler for ProductHandler {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         let content_type: Mime = check_text!("application/json".parse(), "MIME type parsing error");
-        let last_iteration = check_error!(self.database.last_iteration());
+        let iteration = check_error!(self.database.iteration());
         let mut best_products = Vec::new();
 
-        if let Some(last_iteration) = last_iteration {
+        if let Some(iteration) = iteration {
             let mut products_by_category: HashMap<_, IterationPrice> = HashMap::new();
 
             for product_price in check_error!(self.database.product_price_by_iteration(
-                last_iteration,
-                last_iteration,
+                iteration,
+                iteration,
             ))
             {
                 let category_id = product_price.category_id();

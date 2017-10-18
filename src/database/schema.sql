@@ -31,3 +31,10 @@ CREATE TABLE product_price (
 );
 
 CREATE INDEX nx_product_price_iteration ON product_price ( iteration ) ;
+
+CREATE TABLE iteration (
+    id INTEGER PRIMARY KEY,
+    iteration INTEGER NOT NULL
+);
+
+INSERT INTO iteration ( iteration ) VALUES ( 0 ) ;
