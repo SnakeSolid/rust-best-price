@@ -19,13 +19,12 @@ define([ "knockout", "moment" ], function(ko, moment) {
 			width: 1097,
 			height: 320,
 			drawGapEdgePoints: true,
-			drawPoints: true,
 			highlightCircleSize: 2.5,
 			labelsSeparateLines: true,
 			panEdgeFraction: 0.25,
 			showLabelsOnHighlight: true,
 			stepPlot: true,
-			strokeBorderWidth: 2,
+			strokeBorderWidth: 2.5,
 			labels: [ "Update time", "-" ],
 		});
 
