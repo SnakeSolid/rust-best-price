@@ -44,12 +44,12 @@ impl Settings {
                 "Port to listen (default: 8080)",
             );
             ap.refer(&mut period).add_option(
-                &["-d", "--period"],
+                &["-e", "--period"],
                 StoreOption,
                 "Update period in hours (default: 12)",
             );
             ap.refer(&mut config_path).add_option(
-                &["-f", "--config"],
+                &["-c", "--config"],
                 StoreOption,
                 "Path to local database (default: config.toml)",
             );
@@ -59,7 +59,7 @@ impl Settings {
                 "Path to local database (default: local.sqlite)",
             );
             ap.refer(&mut create_database).add_option(
-                &["-c", "--create"],
+                &["-r", "--create"],
                 StoreTrue,
                 "Create local database (default: false)",
             );
@@ -69,7 +69,7 @@ impl Settings {
                 "Force rewrite of local database (default: false)",
             );
             ap.refer(&mut disable_crawler).add_option(
-                &["-i", "--disable-crawler"],
+                &["-s", "--disable-crawler"],
                 StoreTrue,
                 "Do not start background crawler thread (default: false)",
             );
