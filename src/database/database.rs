@@ -191,17 +191,18 @@ fn get_product_prices_by_product(
     product_id: i64,
 ) -> Result<Vec<ProductPrice>, DatabaseError> {
     let mut statement = connection.prepare(
-        "SELECT timestamp, price FROM product_price WHERE product_id = ?",
+        "SELECT iteration, timestamp, price FROM product_price WHERE product_id = ?",
     )?;
     statement.bind(1, product_id)?;
 
     let mut result = Vec::new();
 
     while let State::Row = statement.next()? {
-        let timestamp = statement.read(0)?;
-        let price = statement.read(1)?;
+        let iteration = statement.read(0)?;
+        let timestamp = statement.read(1)?;
+        let price = statement.read(2)?;
 
-        result.push(ProductPrice::new(timestamp, price));
+        result.push(ProductPrice::new(iteration, timestamp, price));
     }
 
     Ok(result)

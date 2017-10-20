@@ -25,6 +25,7 @@ impl Product {
 
 #[derive(Debug, Clone)]
 pub struct ProductPrice {
+    iteration: i64,
     timestamp: i64,
     price: f64,
 }
@@ -32,8 +33,17 @@ pub struct ProductPrice {
 
 impl ProductPrice {
     #[inline]
-    pub fn new(timestamp: i64, price: f64) -> ProductPrice {
-        ProductPrice { timestamp, price }
+    pub fn new(iteration: i64, timestamp: i64, price: f64) -> ProductPrice {
+        ProductPrice {
+            iteration,
+            timestamp,
+            price,
+        }
+    }
+
+    #[inline]
+    pub fn iteration(&self) -> i64 {
+        self.iteration
     }
 
     #[inline]

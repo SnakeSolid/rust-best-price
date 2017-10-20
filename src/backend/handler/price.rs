@@ -37,6 +37,7 @@ struct ResponseProductPrice {
 
 #[derive(Serialize)]
 struct ResponsePrice {
+    iteration: i64,
     timestamp: i64,
     price: f64,
 }
@@ -79,8 +80,12 @@ impl ResponseProductPrice {
 
 
 impl ResponsePrice {
-    fn new(timestamp: i64, price: f64) -> ResponsePrice {
-        ResponsePrice { timestamp, price }
+    fn new(iteration: i64, timestamp: i64, price: f64) -> ResponsePrice {
+        ResponsePrice {
+            iteration,
+            timestamp,
+            price,
+        }
     }
 }
 
@@ -107,6 +112,7 @@ impl Handler for PriceHandler {
             ).into_iter()
             {
                 prices.push(ResponsePrice::new(
+                    product_price.iteration(),
                     product_price.timestamp(),
                     product_price.price(),
                 ));
