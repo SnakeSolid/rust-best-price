@@ -32,7 +32,7 @@ impl Settings {
         {
             let mut ap = ArgumentParser::new();
 
-            ap.set_description("PostgreSQL database test tool.");
+            ap.set_description("Online shop parsing tool.");
             ap.refer(&mut bind_address).add_option(
                 &["-b", "--bind"],
                 StoreOption,
@@ -41,7 +41,7 @@ impl Settings {
             ap.refer(&mut bind_port).add_option(
                 &["-p", "--port"],
                 StoreOption,
-                "Port to listen (default: 8080)",
+                "Port to listen on (default: 8080)",
             );
             ap.refer(&mut period).add_option(
                 &["-e", "--period"],
@@ -51,7 +51,7 @@ impl Settings {
             ap.refer(&mut config_path).add_option(
                 &["-c", "--config"],
                 StoreOption,
-                "Path to local database (default: config.toml)",
+                "Path to configuration file (default: config.toml)",
             );
             ap.refer(&mut database_path).add_option(
                 &["-d", "--database"],
@@ -66,7 +66,7 @@ impl Settings {
             ap.refer(&mut force).add_option(
                 &["-f", "--force"],
                 StoreTrue,
-                "Force rewrite of local database (default: false)",
+                "Force rewrite local database (default: false)",
             );
             ap.refer(&mut disable_crawler).add_option(
                 &["-s", "--disable-crawler"],
