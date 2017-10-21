@@ -1,10 +1,10 @@
 "use strict";
 
 define([ "knockout", "moment" ], function(ko, moment) {
-	const byTimestamp = function(left, right) {
-		if (left.timestamp < right.timestamp) {
+	const byIntegerValue = function(left, right) {
+		if (left < right) {
 			return -1;
-		} else if (left.timestamp > right.timestamp) {
+		} else if (left > right) {
 			return 1;
 		} else {
 			return 0;
@@ -38,33 +38,51 @@ define([ "knockout", "moment" ], function(ko, moment) {
 
 		this.setData = function(data) {
 			const labels = [ "Update time" ];
-			const data_points = [];
+			const iterations = [];
+			const data_map = {};
+			const data_sample = data.map(function() {
+				return null;
+			});
 
 			data.forEach(function (item, index) {
 				labels.push(item.product);
 
 				item.prices.forEach(function (price) {
-					data_points.push({
-						timestamp: price.timestamp,
-						index: index,
-						price: price.price,
-					});
+					const iteration = price.iteration;
+
+					if (!data_map.hasOwnProperty(iteration)) {
+						iterations.push(iteration);
+
+						const values = data_sample.slice([]);
+
+						values[index] = price.price;
+						data_map[iteration] = {
+							count: 1,
+							timestamp_sum: price.timestamp,
+							values: values,
+						};
+					} else {
+						const data_entry = data_map[iteration];
+
+						data_entry.count += 1;
+						data_entry.timestamp_sum += price.timestamp;
+						data_entry.values[index] = price.price;
+					}
 				});
 			});
 
-			data_points.sort(byTimestamp);
+			iterations.sort(byIntegerValue);
 
-			const data_sample = data.map(function() {
-				return null;
-			});
-			const data_values = data_points.map(function(point) {
-				data_sample[point.index] = point.price;
+			const data_points = iterations.map(function(iteration) {
+				const data_entry = data_map[iteration];
+				const timestamp = data_entry.timestamp_sum / data_entry.count;
+				const values = [ moment.unix(timestamp).toDate() ].concat(data_entry.values);
 
-				return [ moment.unix(point.timestamp).toDate() ].concat(data_sample);
+				return values;
 			});
 
 			self.options().labels = labels;
-			self.data(data_values);
+			self.data(data_points);
 		};
 	};
 });
