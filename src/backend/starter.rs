@@ -13,7 +13,7 @@ use super::handler::ProductHandler;
 
 pub fn start_backend(
     database: Database,
-    bind_address: String,
+    bind_address: &str,
     bind_port: u16,
 ) -> Result<(), BackendError> {
     let mut router = Router::new();
@@ -28,7 +28,7 @@ pub fn start_backend(
 
     info!("Starting WEB server {}:{}", bind_address, bind_port);
 
-    Iron::new(mount).http((bind_address.as_str(), bind_port))?;
+    Iron::new(mount).http((bind_address, bind_port))?;
 
     Ok(())
 }

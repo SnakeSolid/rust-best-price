@@ -67,10 +67,10 @@ impl Database {
 
     pub fn save_price(
         &self,
-        shop: &String,
-        category: &String,
-        product_url: &String,
-        product_name: &String,
+        shop: &str,
+        category: &str,
+        product_url: &str,
+        product_name: &str,
         iteration: i64,
         timestamp: i64,
         price: f64,
@@ -279,7 +279,7 @@ VALUES ( ?, ?, ?, ? )
     Ok(())
 }
 
-fn category_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
+fn category_id(connection: &mut Connection, name: &str) -> Result<i64, DatabaseError> {
     let result;
 
     if let Some(id) = get_category_id(connection, name)? {
@@ -292,7 +292,7 @@ fn category_id(connection: &mut Connection, name: &String) -> Result<i64, Databa
     Ok(result)
 }
 
-fn shop_id(connection: &mut Connection, name: &String) -> Result<i64, DatabaseError> {
+fn shop_id(connection: &mut Connection, name: &str) -> Result<i64, DatabaseError> {
     let result;
 
     if let Some(id) = get_shop_id(connection, name)? {
@@ -309,8 +309,8 @@ pub fn product_id(
     connection: &mut Connection,
     shop_id: i64,
     category_id: i64,
-    url: &String,
-    name: &String,
+    url: &str,
+    name: &str,
 ) -> Result<i64, DatabaseError> {
     let result;
 
@@ -324,9 +324,9 @@ pub fn product_id(
     Ok(result)
 }
 
-fn get_product_id(connection: &mut Connection, url: &String) -> Result<Option<i64>, DatabaseError> {
+fn get_product_id(connection: &mut Connection, url: &str) -> Result<Option<i64>, DatabaseError> {
     let mut statement = connection.prepare("SELECT id FROM product WHERE url = ?")?;
-    statement.bind(1, url.as_str())?;
+    statement.bind(1, url)?;
 
     if let State::Row = statement.next()? {
         let id = statement.read(0)?;
@@ -341,8 +341,8 @@ fn save_product(
     connection: &mut Connection,
     shop_id: i64,
     category_id: i64,
-    url: &String,
-    name: &String,
+    url: &str,
+    name: &str,
 ) -> Result<(), DatabaseError> {
     let statement = connection.prepare(
         "INSERT INTO product ( shop_id, category_id, url, name ) VALUES ( ?, ?, ?, ? )",
@@ -352,8 +352,8 @@ fn save_product(
         &[
             Value::Integer(shop_id),
             Value::Integer(category_id),
-            Value::String(url.clone()),
-            Value::String(name.clone()),
+            Value::String(url.into()),
+            Value::String(name.into()),
         ],
     )?;
     cursor.next()?;
@@ -361,9 +361,9 @@ fn save_product(
     Ok(())
 }
 
-fn get_shop_id(connection: &mut Connection, name: &String) -> Result<Option<i64>, DatabaseError> {
+fn get_shop_id(connection: &mut Connection, name: &str) -> Result<Option<i64>, DatabaseError> {
     let mut statement = connection.prepare("SELECT id FROM shop WHERE name = ?")?;
-    statement.bind(1, name.as_str())?;
+    statement.bind(1, name)?;
 
     if let State::Row = statement.next()? {
         let id = statement.read(0)?;
@@ -374,21 +374,18 @@ fn get_shop_id(connection: &mut Connection, name: &String) -> Result<Option<i64>
     }
 }
 
-fn save_shop(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
+fn save_shop(connection: &mut Connection, name: &str) -> Result<(), DatabaseError> {
     let statement = connection.prepare("INSERT INTO shop ( name ) VALUES ( ? )")?;
     let mut cursor = statement.cursor();
-    cursor.bind(&[Value::String(name.clone())])?;
+    cursor.bind(&[Value::String(name.into())])?;
     cursor.next()?;
 
     Ok(())
 }
 
-fn get_category_id(
-    connection: &mut Connection,
-    name: &String,
-) -> Result<Option<i64>, DatabaseError> {
+fn get_category_id(connection: &mut Connection, name: &str) -> Result<Option<i64>, DatabaseError> {
     let mut statement = connection.prepare("SELECT id FROM category WHERE name = ?")?;
-    statement.bind(1, name.as_str())?;
+    statement.bind(1, name)?;
 
     if let State::Row = statement.next()? {
         let id = statement.read(0)?;
@@ -399,12 +396,12 @@ fn get_category_id(
     }
 }
 
-fn save_category(connection: &mut Connection, name: &String) -> Result<(), DatabaseError> {
+fn save_category(connection: &mut Connection, name: &str) -> Result<(), DatabaseError> {
     let statement = connection.prepare(
         "INSERT INTO category ( name ) VALUES ( ? )",
     )?;
     let mut cursor = statement.cursor();
-    cursor.bind(&[Value::String(name.clone())])?;
+    cursor.bind(&[Value::String(name.into())])?;
     cursor.next()?;
 
     Ok(())

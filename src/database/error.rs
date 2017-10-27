@@ -53,14 +53,14 @@ impl<T> From<PoisonError<T>> for DatabaseError {
 
 impl Display for DatabaseError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            &DatabaseError::IsDirectoryError { ref path } => {
+        match *self {
+            DatabaseError::IsDirectoryError { ref path } => {
                 write!(f, "Database path is directory: {}", path.display())
             }
-            &DatabaseError::SqlError { ref description } => write!(f, "SQL error: {}", description),
-            &DatabaseError::IoError { ref description } => write!(f, "IO error: {}", description),
-            &DatabaseError::LockError => write!(f, "Mutex lock error"),
-            &DatabaseError::NoData => write!(f, "No data"),
+            DatabaseError::SqlError { ref description } => write!(f, "SQL error: {}", description),
+            DatabaseError::IoError { ref description } => write!(f, "IO error: {}", description),
+            DatabaseError::LockError => write!(f, "Mutex lock error"),
+            DatabaseError::NoData => write!(f, "No data"),
         }
     }
 }
@@ -68,12 +68,12 @@ impl Display for DatabaseError {
 
 impl Error for DatabaseError {
     fn description(&self) -> &str {
-        match self {
-            &DatabaseError::IsDirectoryError { .. } => "Database path is directory",
-            &DatabaseError::SqlError { .. } => "SQL error",
-            &DatabaseError::IoError { .. } => "IO error",
-            &DatabaseError::LockError => "Mutex lock error",
-            &DatabaseError::NoData => "No data",
+        match *self {
+            DatabaseError::IsDirectoryError { .. } => "Database path is directory",
+            DatabaseError::SqlError { .. } => "SQL error",
+            DatabaseError::IoError { .. } => "IO error",
+            DatabaseError::LockError => "Mutex lock error",
+            DatabaseError::NoData => "No data",
         }
     }
 }

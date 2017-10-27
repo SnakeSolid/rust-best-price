@@ -79,15 +79,15 @@ impl From<ParseIntError> for ProductError {
 
 impl Display for ProductError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            &ProductError::InvaliudSchema => write!(f, "Invalid schema"),
-            &ProductError::InvaliudUri => write!(f, "Invalid URI"),
-            &ProductError::IoError { ref description } => write!(f, "IO error: {}", description),
-            &ProductError::NameElementNotExists => write!(f, "DOM node for name does not exists"),
-            &ProductError::PriceElementNotExists => write!(f, "DOM node for price does not exists"),
-            &ProductError::NameNotFound => write!(f, "Name not found on a page"),
-            &ProductError::PriceNotFound => write!(f, "Price not found on a page"),
-            &ProductError::ParsePriceError => write!(f, "Price has non numeric format"),
+        match *self {
+            ProductError::InvaliudSchema => write!(f, "Invalid schema"),
+            ProductError::InvaliudUri => write!(f, "Invalid URI"),
+            ProductError::IoError { ref description } => write!(f, "IO error: {}", description),
+            ProductError::NameElementNotExists => write!(f, "DOM node for name does not exists"),
+            ProductError::PriceElementNotExists => write!(f, "DOM node for price does not exists"),
+            ProductError::NameNotFound => write!(f, "Name not found on a page"),
+            ProductError::PriceNotFound => write!(f, "Price not found on a page"),
+            ProductError::ParsePriceError => write!(f, "Price has non numeric format"),
         }
     }
 }
@@ -95,15 +95,15 @@ impl Display for ProductError {
 
 impl Error for ProductError {
     fn description(&self) -> &str {
-        match self {
-            &ProductError::InvaliudSchema => "",
-            &ProductError::InvaliudUri => "",
-            &ProductError::IoError { .. } => "",
-            &ProductError::NameElementNotExists => "",
-            &ProductError::PriceElementNotExists => "",
-            &ProductError::NameNotFound => "",
-            &ProductError::PriceNotFound => "",
-            &ProductError::ParsePriceError => "",
+        match *self {
+            ProductError::InvaliudSchema => "Invalid schema",
+            ProductError::InvaliudUri => "Invalid URI",
+            ProductError::IoError { .. } => "IO error",
+            ProductError::NameElementNotExists => "DOM node for name does not exists",
+            ProductError::PriceElementNotExists => "DOM node for price does not exists",
+            ProductError::NameNotFound => "Name not found on a page",
+            ProductError::PriceNotFound => "Price not found on a page",
+            ProductError::ParsePriceError => "Price has non numeric format",
         }
     }
 }

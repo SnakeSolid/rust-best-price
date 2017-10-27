@@ -14,10 +14,8 @@ pub enum BackendError {
 
 impl Display for BackendError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            &BackendError::IronError { ref description } => {
-                write!(f, "Iron error: {}", description)
-            }
+        match *self {
+            BackendError::IronError { ref description } => write!(f, "Iron error: {}", description),
         }
     }
 }
@@ -25,8 +23,8 @@ impl Display for BackendError {
 
 impl Error for BackendError {
     fn description(&self) -> &str {
-        match self {
-            &BackendError::IronError { ref description } => &description,
+        match *self {
+            BackendError::IronError { ref description } => description,
         }
     }
 }

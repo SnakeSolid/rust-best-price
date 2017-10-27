@@ -41,11 +41,11 @@ pub enum ConfigError {
 
 impl Display for ConfigError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        match self {
-            &ConfigError::DuplicateShopName { ref shop_name } => {
+        match *self {
+            ConfigError::DuplicateShopName { ref shop_name } => {
                 write!(f, "Duplicate shop name: {}", shop_name)
             }
-            &ConfigError::NoSuchShopExists { ref shop_name } => {
+            ConfigError::NoSuchShopExists { ref shop_name } => {
                 write!(
                     f,
                     "Shop `{}` exists in product, but not found in shops",

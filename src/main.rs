@@ -38,7 +38,7 @@ use worker::start_crawler;
 
 fn main() {
     if let Err(err) = logger::init() {
-        panic!("Failed to initalize logger: {}", err);
+        panic!("Failed to initialize logger: {}", err);
     }
 
     let settings = Settings::from_args();
@@ -53,6 +53,6 @@ fn main() {
             .unwrap_log("Can't start background loader thread");
     }
 
-    start_backend(database, settings.bind_address(), settings.bind_port())
-        .unwrap_log("Can't start backend serwer");
+    start_backend(database, &settings.bind_address(), settings.bind_port())
+        .unwrap_log("Can't start back-end server");
 }

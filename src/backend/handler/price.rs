@@ -104,12 +104,12 @@ impl Handler for PriceHandler {
         let category_id = check_value!(content_type, params, "category");
         let mut product_prices = Vec::new();
 
-        for product in check_error!(self.database.products_by_category(category_id)).into_iter() {
+        for product in check_error!(self.database.products_by_category(category_id)) {
             let mut prices = Vec::new();
 
             for product_price in check_error!(
                 self.database.product_prices_by_product(product.id())
-            ).into_iter()
+            )
             {
                 prices.push(ResponsePrice::new(
                     product_price.iteration(),

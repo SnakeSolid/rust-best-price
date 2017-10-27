@@ -98,11 +98,9 @@ impl Handler for ProductHandler {
             ))
             {
                 let category_id = product_price.category_id();
-
                 let insert_product = match products_by_category.get(&category_id) {
                     Some(selected_price) if selected_price.price() < product_price.price() => false,
-                    Some(_) => true,
-                    None => true,
+                    Some(_) | None => true,
                 };
 
                 if insert_product {
@@ -110,7 +108,7 @@ impl Handler for ProductHandler {
                 }
             }
 
-            for (category_id, product_price) in products_by_category.drain() {
+            for (category_id, product_price) in products_by_category {
                 best_products.push(ResponseProduct::new(
                     category_id,
                     product_price.category(),

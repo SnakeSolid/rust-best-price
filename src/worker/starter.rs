@@ -63,25 +63,25 @@ impl From<TomlError> for ReadConfigError {
 
 impl Display for ReadConfigError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        match self {
-            &ReadConfigError::IoError { ref description } => write!(f, "IO error: {}", description),
-            &ReadConfigError::ParsingError {
+        match *self {
+            ReadConfigError::IoError { ref description } => write!(f, "IO error: {}", description),
+            ReadConfigError::ParsingError {
                 line: Some(line),
                 column: Some(column),
             } => write!(f, "Parsing error at line {} column {}", line, column),
-            &ReadConfigError::ParsingError {
+            ReadConfigError::ParsingError {
                 line: Some(line),
                 column: None,
             } => write!(f, "Parsing error at line {}", line),
-            &ReadConfigError::ParsingError {
+            ReadConfigError::ParsingError {
                 line: None,
                 column: Some(column),
             } => write!(f, "Parsing error at column {}", column),
-            &ReadConfigError::ParsingError {
+            ReadConfigError::ParsingError {
                 line: None,
                 column: None,
             } => write!(f, "Parsing error"),
-            &ReadConfigError::InvalidConfig { ref error } => {
+            ReadConfigError::InvalidConfig { ref error } => {
                 write!(f, "Invalid configuration: {}", error)
             }
         }
@@ -91,10 +91,10 @@ impl Display for ReadConfigError {
 
 impl Error for ReadConfigError {
     fn description(&self) -> &str {
-        match self {
-            &ReadConfigError::IoError { .. } => "IO error",
-            &ReadConfigError::ParsingError { .. } => "Parsing error",
-            &ReadConfigError::InvalidConfig { .. } => "Invalid configuration",
+        match *self {
+            ReadConfigError::IoError { .. } => "IO error",
+            ReadConfigError::ParsingError { .. } => "Parsing error",
+            ReadConfigError::InvalidConfig { .. } => "Invalid configuration",
         }
     }
 }

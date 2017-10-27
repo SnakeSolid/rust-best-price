@@ -52,11 +52,9 @@ enum UriSchema {
 
 impl Display for PriceLoaderError {
     fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match self {
-            &PriceLoaderError::IoError { ref description } => {
-                write!(f, "IO error: {}", description)
-            }
-            &PriceLoaderError::TlsError { ref description } => {
+        match *self {
+            PriceLoaderError::IoError { ref description } => write!(f, "IO error: {}", description),
+            PriceLoaderError::TlsError { ref description } => {
                 write!(f, "TLS error: {}", description)
             }
         }
@@ -66,9 +64,9 @@ impl Display for PriceLoaderError {
 
 impl Error for PriceLoaderError {
     fn description(&self) -> &str {
-        match self {
-            &PriceLoaderError::IoError { ref description } => &description,
-            &PriceLoaderError::TlsError { ref description } => &description,
+        match *self {
+            PriceLoaderError::IoError { ref description } |
+            PriceLoaderError::TlsError { ref description } => description,
         }
     }
 }
@@ -114,10 +112,10 @@ impl PriceLoader {
 
     pub fn load(
         &mut self,
-        uri: &String,
+        uri: &str,
         cookies: &Option<HashMap<String, String>>,
-        name_selector: &String,
-        price_selector: &String,
+        name_selector: &str,
+        price_selector: &str,
         price_factor: f64,
         price_index: usize,
     ) -> Result<Product, ProductError> {
@@ -129,7 +127,7 @@ impl PriceLoader {
         };
         let mut request = Request::new(Method::Get, uri);
 
-        if let &Some(ref cookies) = cookies {
+        if let Some(ref cookies) = *cookies {
             let mut cookie = Cookie::new();
 
             for (key, value) in cookies {

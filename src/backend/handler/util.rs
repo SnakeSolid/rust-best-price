@@ -5,7 +5,7 @@ macro_rules! check_text {
             Err(_) => {
                 warn!("Handler error: {}", $msg);
 
-                return Ok(Response::with((status::InternalServerError)));
+                return Ok(Response::with(status::InternalServerError));
             }
         }
     }};
@@ -18,7 +18,7 @@ macro_rules! check_error {
             Err(error) => {
                 warn!("Handler error: {}", error.description());
 
-                return Ok(Response::with((status::InternalServerError)));
+                return Ok(Response::with(status::InternalServerError));
             }
         }
     }};
@@ -29,14 +29,14 @@ macro_rules! check_params {
         match $request.get_ref::<UrlEncodedQuery>() {
             Ok(params) => params,
             Err(_) => {
-                let response = HandlerResponse::err(format!("Required parameters not found"));
+                let response = HandlerResponse::err("Required parameters not found");
 
                 match serde_json::to_string(&response) {
                     Ok(body) => return Ok(Response::with(($content_type, status::Ok, body))),
                     Err(error) => {
                         warn!("Handler error: {}", error.description());
 
-                        return Ok(Response::with((status::InternalServerError)));
+                        return Ok(Response::with(status::InternalServerError));
                     }
                 }
             }
@@ -57,7 +57,7 @@ macro_rules! check_value {
                     Err(error) => {
                         warn!("Handler error: {}", error.description());
 
-                        return Ok(Response::with((status::InternalServerError)));
+                        return Ok(Response::with(status::InternalServerError));
                     }
                 }
             }
@@ -73,7 +73,7 @@ macro_rules! check_value {
                     Err(error) => {
                         warn!("Handler error: {}", error.description());
 
-                        return Ok(Response::with((status::InternalServerError)));
+                        return Ok(Response::with(status::InternalServerError));
                     }
                 }
             }
@@ -89,7 +89,7 @@ macro_rules! check_value {
                     Err(error) => {
                         warn!("Handler error: {}", error.description());
 
-                        return Ok(Response::with((status::InternalServerError)));
+                        return Ok(Response::with(status::InternalServerError));
                     }
                 }
             }
