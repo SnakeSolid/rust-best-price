@@ -26,7 +26,7 @@ define([ "knockout", "reqwest", "moment", "messageModel", "chartModel" ], functi
 			const lastUpdate = this.lastUpdate();
 
 			if (lastUpdate) {
-				return lastUpdate.format("YYYY.DD.MM HH:mm:ss");
+				return lastUpdate.format("YYYY.MM.DD HH:mm:ss");
 			} else {
 				return "";
 			}
